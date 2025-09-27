@@ -1,6 +1,5 @@
-@media (max-width: 768px) {
-  body {
-    font-size: 14px;
-    padding: 10px;
-  }
+body {
+  transform: scale(2);
+  transform-origin: top left;
+  width: 50%;
 }
