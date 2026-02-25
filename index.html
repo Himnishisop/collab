@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>🔥 Drake AI Final</title>
+<title>🔥 Drake AI Stable</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
@@ -11,22 +11,16 @@ body{
     font-family:Arial;
     padding:20px;
 }
-
 #chat{
     height:60vh;
     overflow-y:auto;
     border:2px solid #00ffff;
     padding:10px;
 }
-
-.msg{
-    margin:6px 0;
-}
-
+.msg{ margin:6px 0; }
 .user{color:#00ff88;}
 .ai{color:#00ccff;}
 .error{color:red;}
-
 #debug{
     margin-top:10px;
     height:20vh;
@@ -34,111 +28,98 @@ body{
     border:1px solid red;
     padding:5px;
     font-size:12px;
-    color:red;
 }
 </style>
 </head>
 <body>
 
-<h2>🔥 Drake AI – Hands Free</h2>
+<h2>🔥 Drake AI – Stable</h2>
 
 <div id="chat"></div>
-
 <h3>🐞 Debug</h3>
 <div id="debug"></div>
 
 <script>
 
-const API_KEY = "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";
+const API_KEY = "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";
 
 let recognition;
+let waitingForCommand = false;
 let processing = false;
 
-function log(message,type="info"){
-
+function log(msg,type="info"){
     const chat = document.getElementById("chat");
-
     const div = document.createElement("div");
     div.className = "msg " + type;
-    div.innerText = message;
-
+    div.innerText = msg;
     chat.appendChild(div);
     chat.scrollTop = chat.scrollHeight;
 
     const debug = document.getElementById("debug");
-    const time = new Date().toLocaleTimeString();
-    debug.innerHTML += `[${time}] ${message}<br>`;
+    debug.innerHTML += msg + "<br>";
     debug.scrollTop = debug.scrollHeight;
 }
 
 function startMic(){
 
-    try{
+    recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.lang = "en-US";
+    recognition.continuous = true;
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 5;
 
-        recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-        recognition.lang = "en-US";
-        recognition.continuous = true;
-        recognition.interimResults = false;
-        recognition.maxAlternatives = 5;
+    recognition.start();
+    log("🎤 Listening for 'Drake'...");
 
-        recognition.start();
+    recognition.onresult = async function(event){
 
-        log("🎤 Listening for wake word...");
+        if(processing) return;
 
-        recognition.onresult = async function(event){
+        const textRaw = event.results[event.results.length - 1][0].transcript;
+        const text = textRaw.toLowerCase();
 
-            if(processing) return;
+        log("🗣 Heard: " + text,"user");
 
-            const textRaw = event.results[event.results.length - 1][0].transcript;
-            const text = textRaw.toLowerCase();
+        if(!waitingForCommand){
 
-            log("🗣 Heard: " + text,"user");
+            // ---- WAKE WORD DETECTION ----
+            if(text.includes("drake") || text.includes("draik") || text.includes("drak")){
 
-            const wakeWords = [
-                "drake",
-                "draik",
-                "drak",
-                "drack",
-                "drek"
-            ];
+                log("✅ Wake word detected","ai");
 
-            const detected = wakeWords.some(word => text.includes(word));
+                waitingForCommand = true;
 
-            if(detected){
+                speak("Yes boss?");
 
-                processing = true;
+                // Stop mic temporarily
+                recognition.stop();
 
-                let command = text;
-
-                wakeWords.forEach(word=>{
-                    command = command.replace(word,"");
-                });
-
-                command = command.trim();
-
-                if(command.startsWith("play")){
-                    playSong(command.replace("play","").trim());
-                }
-                else if(command.length > 0){
-                    await askAI(command);
-                }
-                else{
-                    log("❗ Wake word detected but no command","error");
-                }
-
-                processing = false;
+                // After short delay, restart to capture command
+                setTimeout(()=>{
+                    recognition.start();
+                },1000);
             }
-        };
 
-        recognition.onerror = function(e){
-            log("Mic Error: " + e.error,"error");
-            recognition.stop();
-            setTimeout(()=>recognition.start(),1000);
-        };
+        } else {
 
-    }catch(err){
-        log("❌ Browser mic not supported","error");
-    }
+            // ---- COMMAND MODE ----
+            waitingForCommand = false;
+
+            if(text.includes("play")){
+                const song = text.replace("play","").trim();
+                playSong(song);
+            }
+            else{
+                await askAI(text);
+            }
+        }
+    };
+
+    recognition.onerror = function(e){
+        log("Mic Error: " + e.error,"error");
+        recognition.stop();
+        setTimeout(()=>recognition.start(),1000);
+    };
 }
 
 async function askAI(text){
@@ -156,14 +137,8 @@ async function askAI(text){
             body:JSON.stringify({
                 model:"liquid/lfm-2.5-1.2b-thinking:free",
                 messages:[
-                    {
-                        role:"system",
-                        content:"You are Drake AI assistant. Reply short and natural."
-                    },
-                    {
-                        role:"user",
-                        content:text
-                    }
+                    {role:"system",content:"You are Drake AI. Reply short."},
+                    {role:"user",content:text}
                 ]
             })
         });
@@ -171,7 +146,7 @@ async function askAI(text){
         const data = await res.json();
 
         if(!data.choices){
-            log("❌ API Error: " + JSON.stringify(data),"error");
+            log("❌ API Error","error");
             return;
         }
 
@@ -193,7 +168,6 @@ function speak(text){
 }
 
 function playSong(song){
-
     log("🎵 Playing: " + song);
 
     const url = "https://www.youtube.com/results?search_query=" +
