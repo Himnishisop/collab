@@ -1,78 +1,138 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Drake AI - Hands Free</title>
+<title>🔥 Drake AI Pro</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body{
+    background:#000;
+    color:#0ff;
+    font-family:Arial;
+    margin:0;
+    padding:20px;
+}
+
+#chat{
+    height:60vh;
+    overflow-y:auto;
+    border:1px solid #0ff;
+    padding:10px;
+    margin-bottom:10px;
+}
+
+.msg{
+    margin:6px 0;
+}
+
+.user{ color:#00ff88; }
+.ai{ color:#00ccff; }
+.error{ color:red; }
+
+#debug{
+    background:#111;
+    border:1px solid red;
+    padding:10px;
+    height:20vh;
+    overflow-y:auto;
+    font-size:12px;
+}
+</style>
 </head>
+<body>
 
-<body style="background:black;color:white;font-family:Arial;">
+<h2>🔥 Drake AI Pro (Auto Listening)</h2>
 
-<h2 style="text-align:center;">🔥 Drake AI (24/7 Listening)</h2>
-<p id="status" style="text-align:center;">Initializing...</p>
+<div id="chat"></div>
+
+<h3>🐞 Debug Panel</h3>
+<div id="debug"></div>
 
 <script>
 
 const API_KEY = "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";
-
 let recognition;
+
+function log(msg,type="info"){
+    let div = document.createElement("div");
+    div.className = "msg " + type;
+    div.innerText = msg;
+    document.getElementById("chat").appendChild(div);
+    document.getElementById("chat").scrollTop = document.getElementById("chat").scrollHeight;
+
+    let debug = document.getElementById("debug");
+    debug.innerHTML += msg + "<br>";
+    debug.scrollTop = debug.scrollHeight;
+}
 
 function startListening(){
 
-    recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-    recognition.lang = "en-US";
-    recognition.continuous = true;
-    recognition.interimResults = false;
+    try{
+        recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        recognition.lang = "en-US";
+        recognition.continuous = true;
+        recognition.interimResults = false;
 
-    recognition.start();
+        recognition.start();
+        log("🎤 Listening for 'Drake'...");
 
-    document.getElementById("status").innerText = "Listening 24/7...";
+        recognition.onresult = function(event){
 
-    recognition.onresult = function(event){
+            const text = event.results[event.results.length - 1][0].transcript.toLowerCase();
+            log("🗣 Heard: " + text,"user");
 
-        const text = event.results[event.results.length - 1][0].transcript;
-        const lower = text.toLowerCase();
+            if(text.includes("drake")){
 
-        console.log("Heard:", lower);
+                let command = text.replace("drake","").trim();
 
-        if(lower.includes("drake")){
-
-            let command = lower.replace("drake","").trim();
-
-            if(command.startsWith("play")){
-                let song = command.replace("play","").trim();
-                playSong(song);
-            } else {
-                askAI(command);
+                if(command.startsWith("play")){
+                    let song = command.replace("play","").trim();
+                    playSong(song);
+                } else if(command.length > 0){
+                    askAI(command);
+                }
             }
-        }
-    };
+        };
 
-    recognition.onerror = function(){
-        recognition.stop();
-        setTimeout(()=> recognition.start(),1000);
-    };
+        recognition.onerror = function(e){
+            log("❌ Mic Error: " + e.error,"error");
+            recognition.stop();
+            setTimeout(()=>recognition.start(),1000);
+        };
+
+    }catch(err){
+        log("❌ Browser not supported","error");
+    }
 }
 
 async function askAI(text){
 
-    const res = await fetch("https://openrouter.ai/api/v1/chat/completions",{
-        method:"POST",
-        headers:{
-            "Authorization":"Bearer " + API_KEY,
-            "Content-Type":"application/json"
-        },
-        body:JSON.stringify({
-            model:"liquid/lfm-2.5-1.2b-thinking:free",
-            messages:[
-                {role:"system",content:"You are Drake assistant. Reply short."},
-                {role:"user",content:text}
-            ]
-        })
-    });
+    log("🤖 Sending to AI...");
 
-    const data = await res.json();
-    const reply = data.choices?.[0]?.message?.content || "No response";
+    try{
+        const res = await fetch("https://openrouter.ai/api/v1/chat/completions",{
+            method:"POST",
+            headers:{
+                "Authorization":"Bearer " + API_KEY,
+                "Content-Type":"application/json"
+            },
+            body:JSON.stringify({
+                model:"liquid/lfm-2.5-1.2b-thinking:free",
+                messages:[
+                    {role:"system",content:"You are Drake AI. Reply short and smart."},
+                    {role:"user",content:text}
+                ]
+            })
+        });
 
-    speak(reply);
+        const data = await res.json();
+        const reply = data?.choices?.[0]?.message?.content || "No response";
+
+        log("🤖 Drake: " + reply,"ai");
+        speak(reply);
+
+    }catch(err){
+        log("❌ API Error","error");
+    }
 }
 
 function speak(text){
@@ -83,7 +143,7 @@ function speak(text){
 
 function playSong(song){
 
-    speak("Playing " + song);
+    log("🎵 Playing: " + song);
 
     const search = encodeURIComponent(song + " official audio");
     const url = "https://www.youtube.com/results?search_query=" + search;
