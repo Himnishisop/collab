@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>🔥 Drake AI Ultra</title>
+<title>🔥 Drake AI Final</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 body{
-    background:#000;
+    background:black;
     color:#00ffff;
     font-family:Arial;
     padding:20px;
@@ -15,12 +15,12 @@ body{
 #chat{
     height:60vh;
     overflow-y:auto;
-    border:1px solid #00ffff;
+    border:2px solid #00ffff;
     padding:10px;
 }
 
 .msg{
-    margin:8px 0;
+    margin:6px 0;
 }
 
 .user{color:#00ff88;}
@@ -40,7 +40,7 @@ body{
 </head>
 <body>
 
-<h2>🔥 Drake AI Ultra</h2>
+<h2>🔥 Drake AI – Hands Free</h2>
 
 <div id="chat"></div>
 
@@ -49,11 +49,13 @@ body{
 
 <script>
 
-const API_KEY = "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";
+const API_KEY = "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";
+
 let recognition;
 let processing = false;
 
-function log(message,type="debug"){
+function log(message,type="info"){
+
     const chat = document.getElementById("chat");
 
     const div = document.createElement("div");
@@ -71,44 +73,72 @@ function log(message,type="debug"){
 
 function startMic(){
 
-    recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-    recognition.lang = "en-US";
-    recognition.continuous = true;
-    recognition.interimResults = false;
+    try{
 
-    recognition.start();
-    log("🎤 Listening for wake word 'Drake'...");
+        recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        recognition.lang = "en-US";
+        recognition.continuous = true;
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 5;
 
-    recognition.onresult = async function(event){
+        recognition.start();
 
-        if(processing) return;
+        log("🎤 Listening for wake word...");
 
-        const text = event.results[event.results.length - 1][0].transcript.toLowerCase();
-        log("🗣 Heard: " + text,"user");
+        recognition.onresult = async function(event){
 
-        if(text.includes("drake")){
-            processing = true;
+            if(processing) return;
 
-            const command = text.replace("drake","").trim();
+            const textRaw = event.results[event.results.length - 1][0].transcript;
+            const text = textRaw.toLowerCase();
 
-            if(command.startsWith("play")){
-                playSong(command.replace("play","").trim());
-                processing = false;
-            } else if(command.length > 0){
-                await askAI(command);
-                processing = false;
-            } else {
-                log("❗ No command detected","error");
+            log("🗣 Heard: " + text,"user");
+
+            const wakeWords = [
+                "drake",
+                "draik",
+                "drak",
+                "drack",
+                "drek"
+            ];
+
+            const detected = wakeWords.some(word => text.includes(word));
+
+            if(detected){
+
+                processing = true;
+
+                let command = text;
+
+                wakeWords.forEach(word=>{
+                    command = command.replace(word,"");
+                });
+
+                command = command.trim();
+
+                if(command.startsWith("play")){
+                    playSong(command.replace("play","").trim());
+                }
+                else if(command.length > 0){
+                    await askAI(command);
+                }
+                else{
+                    log("❗ Wake word detected but no command","error");
+                }
+
                 processing = false;
             }
-        }
-    };
+        };
 
-    recognition.onerror = function(e){
-        log("Mic Error: " + e.error,"error");
-        recognition.stop();
-        setTimeout(()=>recognition.start(),1000);
-    };
+        recognition.onerror = function(e){
+            log("Mic Error: " + e.error,"error");
+            recognition.stop();
+            setTimeout(()=>recognition.start(),1000);
+        };
+
+    }catch(err){
+        log("❌ Browser mic not supported","error");
+    }
 }
 
 async function askAI(text){
@@ -126,8 +156,14 @@ async function askAI(text){
             body:JSON.stringify({
                 model:"liquid/lfm-2.5-1.2b-thinking:free",
                 messages:[
-                    {role:"system",content:"You are Drake AI. Reply short and natural."},
-                    {role:"user",content:text}
+                    {
+                        role:"system",
+                        content:"You are Drake AI assistant. Reply short and natural."
+                    },
+                    {
+                        role:"user",
+                        content:text
+                    }
                 ]
             })
         });
@@ -152,13 +188,17 @@ async function askAI(text){
 function speak(text){
     const speech = new SpeechSynthesisUtterance(text);
     speech.lang = "en-US";
+    speech.rate = 1;
     window.speechSynthesis.speak(speech);
 }
 
 function playSong(song){
+
     log("🎵 Playing: " + song);
+
     const url = "https://www.youtube.com/results?search_query=" +
         encodeURIComponent(song + " official audio");
+
     window.open(url,"_blank");
 }
 
