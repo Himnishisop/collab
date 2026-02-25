@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>🔥 Drake AI Pro (A4F API)</title>
+<title>🔥 Drake AI Smart Mode</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
@@ -19,63 +19,55 @@ body{
   padding:10px;
 }
 
-.msg{ margin:6px 0; }
+.msg{margin:6px 0;}
 .user{color:#00ff88;}
 .ai{color:#00ccff;}
 .error{color:red;}
 
-#debug{
+#status{
   margin-top:10px;
-  height:20vh;
-  overflow-y:auto;
-  border:1px solid red;
-  padding:5px;
-  font-size:12px;
+  font-weight:bold;
 }
 </style>
 </head>
 <body>
 
-<h2>🔥 Drake AI – A4F Engine</h2>
+<h2>🔥 Drake AI — Auto Wake System</h2>
 
 <div id="chat"></div>
-<h3>🐞 Debug</h3>
-<div id="debug"></div>
+<div id="status">Status: Idle (Waiting for "Drake")</div>
 
 <script>
 
-const API_KEY = "ddc-a4f-c964629239ac4b1eba7b5a8a57e94a38";
+const API_KEY = "YOUR_A4F_API_KEY";
 
 let recognition;
+let mode = "idle"; // idle | command
 let processing = false;
 
 function log(msg,type="info"){
   const chat = document.getElementById("chat");
-
   const div = document.createElement("div");
   div.className = "msg " + type;
   div.innerText = msg;
 
   chat.appendChild(div);
   chat.scrollTop = chat.scrollHeight;
-
-  const debug = document.getElementById("debug");
-  const time = new Date().toLocaleTimeString();
-  debug.innerHTML += `[${time}] ${msg}<br>`;
-  debug.scrollTop = debug.scrollHeight;
 }
 
-function startMic(){
+function updateStatus(text){
+  document.getElementById("status").innerText = "Status: " + text;
+}
+
+function startListening(){
 
   recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
   recognition.lang = "en-US";
   recognition.continuous = true;
   recognition.interimResults = false;
-  recognition.maxAlternatives = 5;
 
   recognition.start();
-
-  log("🎤 Listening for 'Drake'...");
+  updateStatus("Listening for Wake Word...");
 
   recognition.onresult = async function(event){
 
@@ -86,24 +78,24 @@ function startMic(){
 
     log("🗣 Heard: " + text,"user");
 
-    if(text.includes("drake") || text.includes("drak") || text.includes("draik")){
+    // ---------- IDLE MODE ----------
+    if(mode === "idle"){
 
-      processing = true;
-      speak("Yes boss?");
+      if(text.includes("drake") || text.includes("drak") || text.includes("draik")){
 
-      recognition.stop();
+        mode = "command";
+        updateStatus("Wake detected — Listening for Command");
+        speak("Yes boss?");
+      }
 
-      setTimeout(()=>{
-        recognition.start();
-      },1000);
-
-      return;
     }
 
-    // COMMAND MODE
-    if(!processing && text.length > 2){
+    // ---------- COMMAND MODE ----------
+    else if(mode === "command"){
 
       processing = true;
+
+      recognition.stop(); // stop mic temporarily
 
       if(text.includes("play")){
         const song = text.replace("play","").trim();
@@ -113,8 +105,17 @@ function startMic(){
         await askAI(text);
       }
 
+      // After response → go back to idle
+      mode = "idle";
+      updateStatus("Idle (Waiting for 'Drake')");
+
+      setTimeout(()=>{
+        recognition.start();
+      },1500);
+
       processing = false;
     }
+
   };
 
   recognition.onerror = function(e){
@@ -126,11 +127,11 @@ function startMic(){
 
 async function askAI(text){
 
-  log("🤖 Sending to A4F API...");
+  log("🤖 Sending to AI...");
 
   try{
 
-    const response = await fetch("https://api.a4f.co/v1/chat/completions",{
+    const res = await fetch("https://api.a4f.co/v1/chat/completions",{
       method:"POST",
       headers:{
         "Authorization":"Bearer " + API_KEY,
@@ -139,15 +140,15 @@ async function askAI(text){
       body:JSON.stringify({
         model:"provider-6/gpt-oss-20b",
         messages:[
-          {role:"system",content:"You are Drake AI assistant. Reply short and smart."},
+          {role:"system",content:"You are Drake AI. Reply short and smart."},
           {role:"user",content:text}
         ],
         temperature:0.7,
-        max_tokens:200
+        max_tokens:300
       })
     });
 
-    const data = await response.json();
+    const data = await res.json();
 
     if(!data.choices){
       log("❌ API Error: " + JSON.stringify(data),"error");
@@ -174,6 +175,7 @@ function speak(text){
 function playSong(song){
 
   log("🎵 Playing: " + song);
+  speak("Playing " + song);
 
   const url = "https://www.youtube.com/results?search_query=" +
     encodeURIComponent(song + " official audio");
@@ -181,7 +183,7 @@ function playSong(song){
   window.open(url,"_blank");
 }
 
-window.onload = startMic;
+window.onload = startListening;
 
 </script>
 
