@@ -1,87 +1,99 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>🔥 Drake AI</title>
+<title>Drake AI - Hands Free</title>
 </head>
-<body style="background:black;color:white;text-align:center;font-family:Arial;">
 
-<h1>🔥 Drake Voice Assistant</h1>
+<body style="background:black;color:white;font-family:Arial;">
 
-<button onclick="startListening()" style="padding:15px;font-size:20px;">
-🎤 Start Listening
-</button>
-
-<p id="output"></p>
-
-<audio id="player" controls style="margin-top:20px;width:300px;"></audio>
+<h2 style="text-align:center;">🔥 Drake AI (24/7 Listening)</h2>
+<p id="status" style="text-align:center;">Initializing...</p>
 
 <script>
 
 const API_KEY = "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";
 
-async function startListening() {
+let recognition;
 
-    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+function startListening(){
+
+    recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
     recognition.lang = "en-US";
+    recognition.continuous = true;
+    recognition.interimResults = false;
+
     recognition.start();
 
-    document.getElementById("output").innerText = "Listening...";
+    document.getElementById("status").innerText = "Listening 24/7...";
 
-    recognition.onresult = async function(event) {
-        const text = event.results[0][0].transcript;
-        document.getElementById("output").innerText = "You: " + text;
+    recognition.onresult = function(event){
 
-        if(text.toLowerCase().startsWith("play")) {
-            playSong(text.replace("play","").trim());
-        } else {
-            askAI(text);
+        const text = event.results[event.results.length - 1][0].transcript;
+        const lower = text.toLowerCase();
+
+        console.log("Heard:", lower);
+
+        if(lower.includes("drake")){
+
+            let command = lower.replace("drake","").trim();
+
+            if(command.startsWith("play")){
+                let song = command.replace("play","").trim();
+                playSong(song);
+            } else {
+                askAI(command);
+            }
         }
+    };
+
+    recognition.onerror = function(){
+        recognition.stop();
+        setTimeout(()=> recognition.start(),1000);
     };
 }
 
 async function askAI(text){
 
-    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-            "Authorization": "Bearer " + API_KEY,
-            "Content-Type": "application/json"
+    const res = await fetch("https://openrouter.ai/api/v1/chat/completions",{
+        method:"POST",
+        headers:{
+            "Authorization":"Bearer " + API_KEY,
+            "Content-Type":"application/json"
         },
-        body: JSON.stringify({
-            model: "liquid/lfm-2.5-1.2b-thinking:free",
-            messages: [
-                {role:"system", content:"You are Drake AI assistant. Reply short."},
-                {role:"user", content:text}
+        body:JSON.stringify({
+            model:"liquid/lfm-2.5-1.2b-thinking:free",
+            messages:[
+                {role:"system",content:"You are Drake assistant. Reply short."},
+                {role:"user",content:text}
             ]
         })
     });
 
     const data = await res.json();
-    const reply = data.choices[0].message.content;
+    const reply = data.choices?.[0]?.message?.content || "No response";
 
-    document.getElementById("output").innerText = "Drake: " + reply;
     speak(reply);
 }
 
 function speak(text){
     const speech = new SpeechSynthesisUtterance(text);
+    speech.lang = "en-US";
     window.speechSynthesis.speak(speech);
 }
 
-function playSong(songName){
+function playSong(song){
 
-    document.getElementById("output").innerText = "Searching: " + songName;
+    speak("Playing " + song);
 
-    const query = encodeURIComponent(songName + " song");
-    const youtubeUrl = "https://www.youtube.com/results?search_query=" + query;
+    const search = encodeURIComponent(song + " official audio");
+    const url = "https://www.youtube.com/results?search_query=" + search;
 
-    window.open(youtubeUrl, "_blank");
-
-    document.getElementById("output").innerText = "Opened YouTube for: " + songName;
+    window.open(url,"_blank");
 }
+
+window.onload = startListening;
 
 </script>
 
 </body>
 </html>
-
