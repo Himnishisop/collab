@@ -1,107 +1,114 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>🔥 Drake AI Pro</title>
+<title>🔥 Drake AI Ultra</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <style>
 body{
     background:#000;
-    color:#0ff;
+    color:#00ffff;
     font-family:Arial;
-    margin:0;
     padding:20px;
 }
 
 #chat{
     height:60vh;
     overflow-y:auto;
-    border:1px solid #0ff;
+    border:1px solid #00ffff;
     padding:10px;
-    margin-bottom:10px;
 }
 
 .msg{
-    margin:6px 0;
+    margin:8px 0;
 }
 
-.user{ color:#00ff88; }
-.ai{ color:#00ccff; }
-.error{ color:red; }
+.user{color:#00ff88;}
+.ai{color:#00ccff;}
+.error{color:red;}
 
 #debug{
-    background:#111;
-    border:1px solid red;
-    padding:10px;
+    margin-top:10px;
     height:20vh;
     overflow-y:auto;
+    border:1px solid red;
+    padding:5px;
     font-size:12px;
+    color:red;
 }
 </style>
 </head>
 <body>
 
-<h2>🔥 Drake AI Pro (Auto Listening)</h2>
+<h2>🔥 Drake AI Ultra</h2>
 
 <div id="chat"></div>
 
-<h3>🐞 Debug Panel</h3>
+<h3>🐞 Debug</h3>
 <div id="debug"></div>
 
 <script>
 
 const API_KEY = "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";
 let recognition;
+let processing = false;
 
-function log(msg,type="info"){
-    let div = document.createElement("div");
+function log(message,type="debug"){
+    const chat = document.getElementById("chat");
+
+    const div = document.createElement("div");
     div.className = "msg " + type;
-    div.innerText = msg;
-    document.getElementById("chat").appendChild(div);
-    document.getElementById("chat").scrollTop = document.getElementById("chat").scrollHeight;
+    div.innerText = message;
 
-    let debug = document.getElementById("debug");
-    debug.innerHTML += msg + "<br>";
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+
+    const debug = document.getElementById("debug");
+    const time = new Date().toLocaleTimeString();
+    debug.innerHTML += `[${time}] ${message}<br>`;
     debug.scrollTop = debug.scrollHeight;
 }
 
-function startListening(){
+function startMic(){
 
-    try{
-        recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-        recognition.lang = "en-US";
-        recognition.continuous = true;
-        recognition.interimResults = false;
+    recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.lang = "en-US";
+    recognition.continuous = true;
+    recognition.interimResults = false;
 
-        recognition.start();
-        log("🎤 Listening for 'Drake'...");
+    recognition.start();
+    log("🎤 Listening for wake word 'Drake'...");
 
-        recognition.onresult = function(event){
+    recognition.onresult = async function(event){
 
-            const text = event.results[event.results.length - 1][0].transcript.toLowerCase();
-            log("🗣 Heard: " + text,"user");
+        if(processing) return;
 
-            if(text.includes("drake")){
+        const text = event.results[event.results.length - 1][0].transcript.toLowerCase();
+        log("🗣 Heard: " + text,"user");
 
-                let command = text.replace("drake","").trim();
+        if(text.includes("drake")){
+            processing = true;
 
-                if(command.startsWith("play")){
-                    let song = command.replace("play","").trim();
-                    playSong(song);
-                } else if(command.length > 0){
-                    askAI(command);
-                }
+            const command = text.replace("drake","").trim();
+
+            if(command.startsWith("play")){
+                playSong(command.replace("play","").trim());
+                processing = false;
+            } else if(command.length > 0){
+                await askAI(command);
+                processing = false;
+            } else {
+                log("❗ No command detected","error");
+                processing = false;
             }
-        };
+        }
+    };
 
-        recognition.onerror = function(e){
-            log("❌ Mic Error: " + e.error,"error");
-            recognition.stop();
-            setTimeout(()=>recognition.start(),1000);
-        };
-
-    }catch(err){
-        log("❌ Browser not supported","error");
-    }
+    recognition.onerror = function(e){
+        log("Mic Error: " + e.error,"error");
+        recognition.stop();
+        setTimeout(()=>recognition.start(),1000);
+    };
 }
 
 async function askAI(text){
@@ -109,6 +116,7 @@ async function askAI(text){
     log("🤖 Sending to AI...");
 
     try{
+
         const res = await fetch("https://openrouter.ai/api/v1/chat/completions",{
             method:"POST",
             headers:{
@@ -118,20 +126,26 @@ async function askAI(text){
             body:JSON.stringify({
                 model:"liquid/lfm-2.5-1.2b-thinking:free",
                 messages:[
-                    {role:"system",content:"You are Drake AI. Reply short and smart."},
+                    {role:"system",content:"You are Drake AI. Reply short and natural."},
                     {role:"user",content:text}
                 ]
             })
         });
 
         const data = await res.json();
-        const reply = data?.choices?.[0]?.message?.content || "No response";
+
+        if(!data.choices){
+            log("❌ API Error: " + JSON.stringify(data),"error");
+            return;
+        }
+
+        const reply = data.choices[0].message.content;
 
         log("🤖 Drake: " + reply,"ai");
         speak(reply);
 
     }catch(err){
-        log("❌ API Error","error");
+        log("❌ Network Error","error");
     }
 }
 
@@ -142,16 +156,13 @@ function speak(text){
 }
 
 function playSong(song){
-
     log("🎵 Playing: " + song);
-
-    const search = encodeURIComponent(song + " official audio");
-    const url = "https://www.youtube.com/results?search_query=" + search;
-
+    const url = "https://www.youtube.com/results?search_query=" +
+        encodeURIComponent(song + " official audio");
     window.open(url,"_blank");
 }
 
-window.onload = startListening;
+window.onload = startMic;
 
 </script>
 
