@@ -1,8 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>🔥 Drake AI - Audio Engine</title>
+<title>🔥 Drake AI - Real Wake Engine</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script src="https://unpkg.com/@picovoice/porcupine-web@latest/dist/iife/index.js"></script>
 
 <style>
 body{
@@ -11,252 +13,118 @@ body{
   font-family:Arial;
   padding:20px;
 }
-
 #log{
   height:80vh;
   overflow:auto;
   border:2px solid #00ffff;
   padding:10px;
-  font-size:14px;
 }
-
-.msg{margin:5px 0;}
-.user{color:#00ff88;}
-.ai{color:#00ccff;}
-.error{color:red;}
+.msg{margin:6px 0;}
+.wake{color:lime;}
 </style>
 </head>
 <body>
 
-<h2>🔥 Drake AI — WebAudio Always On</h2>
+<h2>🔥 Drake AI — Real Wake Word Engine</h2>
 
 <div id="log"></div>
 
 <script>
 
-const API_KEY = "ddc-a4f-c964629239ac4b1eba7b5a8a57e94a38";
-let audioContext;
-let analyser;
-let microphone;
-let dataArray;
+const ACCESS_KEY = "8LcymlmIi9K8+h25/5bGVTTC997LahCxBkQ4NwdYxXCa6hp6j9QDVA=="; 
+// Get from Picovoice dashboard
 
-let wakeDetected = false;
-let processing = false;
+let porcupine;
+let audioContext;
+let microphone;
 
 function log(msg,type="info"){
   const div = document.createElement("div");
-  div.className = "msg " + type;
-  div.innerText = msg;
+  div.className="msg "+type;
+  div.innerText=msg;
   document.getElementById("log").appendChild(div);
   document.getElementById("log").scrollTop =
     document.getElementById("log").scrollHeight;
 }
 
-/* ===============================
-   START MICROPHONE STREAM
-==================================*/
+async function startEngine(){
 
-async function startAudioStream(){
+  log("🧠 Loading Porcupine...");
 
-  try{
+  porcupine = await PorcupineWeb.PorcupineWorker.create(
+    ACCESS_KEY,
+    ["drake.ppn"], // YOUR MODEL FILE
+    [0.5] // Sensitivity
+  );
 
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio:true,
-      video:false
-    });
-
-    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    microphone = audioContext.createMediaStreamSource(stream);
-    analyser = audioContext.createAnalyser();
-
-    analyser.fftSize = 512;
-
-    const bufferLength = analyser.frequencyBinCount;
-    dataArray = new Uint8Array(bufferLength);
-
-    microphone.connect(analyser);
-
-    log("🎤 Mic Stream Active — Monitoring Audio...");
-
-    monitorAudio();
-
-  }catch(err){
-    log("❌ Mic Access Denied","error");
-  }
-}
-
-/* ===============================
-   CONTINUOUS AUDIO MONITOR
-==================================*/
-
-function monitorAudio(){
-
-  analyser.getByteFrequencyData(dataArray);
-
-  let volume = 0;
-  for(let i=0;i<dataArray.length;i++){
-    volume += dataArray[i];
-  }
-
-  volume = volume / dataArray.length;
-
-  // If sound energy is high → possible speech
-  if(volume > 20){
-    detectWakeWord();
-  }
-
-  requestAnimationFrame(monitorAudio);
-}
-
-/* ===============================
-   WAKE WORD DETECTION
-==================================*/
-
-async function detectWakeWord(){
-
-  if(processing) return;
-
-  // Convert audio to temporary text using Speech API once
-  // (We only use it when sound detected to save power)
-
-  const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-  recognition.lang = "en-US";
-  recognition.maxAlternatives = 3;
-
-  recognition.start();
-
-  recognition.onresult = async (event)=>{
-
-    const text = event.results[0][0].transcript.toLowerCase();
-
-    log("🗣 Heard: " + text,"user");
-
-    if(text.includes("drake") || text.includes("drak") || text.includes("draik")){
-
-      log("🔥 Wake Word Triggered","ai");
-
-      processing = true;
-
+  porcupine.onmessage = (event)=>{
+    if(event.data.keywordIndex === 0){
+      log("🔥 WAKE WORD DETECTED — Drake","wake");
       speak("Yes boss?");
-
-      setTimeout(()=>{
-        listenForCommand();
-      },1000);
+      listenForCommand();
     }
-
-    recognition.stop();
   };
-}
 
-/* ===============================
-   LISTEN FOR COMMAND AFTER WAKE
-==================================*/
+  log("🎤 Starting microphone...");
+
+  audioContext = new AudioContext();
+  const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+  microphone = audioContext.createMediaStreamSource(stream);
+
+  const processor = audioContext.createScriptProcessor(512,1,1);
+
+  microphone.connect(processor);
+  processor.connect(audioContext.destination);
+
+  processor.onaudioprocess = (e)=>{
+    const input = e.inputBuffer.getChannelData(0);
+    porcupine.postMessage({command:"process", input});
+  };
+
+  log("✅ Drake Wake Engine Running");
+}
 
 function listenForCommand(){
-
   const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-  recognition.lang = "en-US";
-  recognition.maxAlternatives = 3;
-
+  recognition.lang="en-US";
   recognition.start();
 
-  log("🎯 Listening for Command...");
-
   recognition.onresult = async (event)=>{
-
-    const command = event.results[0][0].transcript.toLowerCase();
-
-    log("🧠 Command: " + command,"user");
-
-    if(command.includes("play")){
-      const song = command.replace("play","").trim();
-      playSong(song);
-    }
-    else{
-      await askAI(command);
-    }
-
-    processing = false;
-    recognition.stop();
+    const command = event.results[0][0].transcript;
+    log("🧠 Command: "+command);
+    handleCommand(command);
   };
 }
 
-/* ===============================
-   AI REQUEST
-==================================*/
+function handleCommand(text){
 
-async function askAI(text){
-
-  log("🤖 Sending to AI...");
-
-  try{
-
-    const res = await fetch("https://api.a4f.co/v1/chat/completions",{
-      method:"POST",
-      headers:{
-        "Authorization":"Bearer " + API_KEY,
-        "Content-Type":"application/json"
-      },
-      body:JSON.stringify({
-        model:"provider-6/gpt-oss-20b",
-        messages:[
-          {role:"system",content:"You are Drake AI. Reply short."},
-          {role:"user",content:text}
-        ],
-        max_tokens:300,
-        temperature:0.7
-      })
-    });
-
-    const data = await res.json();
-
-    if(!data.choices){
-      log("❌ API Error: " + JSON.stringify(data),"error");
-      return;
-    }
-
-    const reply = data.choices[0].message.content;
-
-    log("🤖 Drake: " + reply,"ai");
-    speak(reply);
-
-  }catch(err){
-    log("❌ Network Error","error");
+  if(text.includes("play")){
+    const song = text.replace("play","").trim();
+    playSong(song);
+  }
+  else{
+    speak("Processing");
   }
 }
 
-/* ===============================
-   TEXT TO SPEECH
-==================================*/
+function playSong(song){
+  log("🎵 Playing "+song);
+  window.open(
+    "https://www.youtube.com/results?search_query="+
+    encodeURIComponent(song+" official audio"),
+    "_blank"
+  );
+}
 
 function speak(text){
-  const speech = new SpeechSynthesisUtterance(text);
-  speech.lang = "en-US";
-  speech.rate = 1;
-  window.speechSynthesis.speak(speech);
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang="en-US";
+  window.speechSynthesis.speak(utter);
 }
 
-/* ===============================
-   SONG PLAYER
-==================================*/
-
-function playSong(song){
-
-  log("🎵 Playing: " + song);
-  speak("Playing " + song);
-
-  const url = "https://www.youtube.com/results?search_query=" +
-    encodeURIComponent(song + " official audio");
-
-  window.open(url,"_blank");
-}
-
-/* =============================== */
-
-window.onload = startAudioStream;
+startEngine();
 
 </script>
 
 </body>
 </html>
-
