@@ -1,39 +1,42 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>🔥 Drake AI Stable</title>
+<title>🔥 Drake AI Pro (A4F API)</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 body{
-    background:black;
-    color:#00ffff;
-    font-family:Arial;
-    padding:20px;
+  background:black;
+  color:#00ffff;
+  font-family:Arial;
+  padding:20px;
 }
+
 #chat{
-    height:60vh;
-    overflow-y:auto;
-    border:2px solid #00ffff;
-    padding:10px;
+  height:60vh;
+  overflow-y:auto;
+  border:2px solid #00ffff;
+  padding:10px;
 }
+
 .msg{ margin:6px 0; }
 .user{color:#00ff88;}
 .ai{color:#00ccff;}
 .error{color:red;}
+
 #debug{
-    margin-top:10px;
-    height:20vh;
-    overflow-y:auto;
-    border:1px solid red;
-    padding:5px;
-    font-size:12px;
+  margin-top:10px;
+  height:20vh;
+  overflow-y:auto;
+  border:1px solid red;
+  padding:5px;
+  font-size:12px;
 }
 </style>
 </head>
 <body>
 
-<h2>🔥 Drake AI – Stable</h2>
+<h2>🔥 Drake AI – A4F Engine</h2>
 
 <div id="chat"></div>
 <h3>🐞 Debug</h3>
@@ -41,139 +44,141 @@ body{
 
 <script>
 
-const API_KEY = "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";
+const API_KEY = "ddc-a4f-c964629239ac4b1eba7b5a8a57e94a38";
 
 let recognition;
-let waitingForCommand = false;
 let processing = false;
 
 function log(msg,type="info"){
-    const chat = document.getElementById("chat");
-    const div = document.createElement("div");
-    div.className = "msg " + type;
-    div.innerText = msg;
-    chat.appendChild(div);
-    chat.scrollTop = chat.scrollHeight;
+  const chat = document.getElementById("chat");
 
-    const debug = document.getElementById("debug");
-    debug.innerHTML += msg + "<br>";
-    debug.scrollTop = debug.scrollHeight;
+  const div = document.createElement("div");
+  div.className = "msg " + type;
+  div.innerText = msg;
+
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+
+  const debug = document.getElementById("debug");
+  const time = new Date().toLocaleTimeString();
+  debug.innerHTML += `[${time}] ${msg}<br>`;
+  debug.scrollTop = debug.scrollHeight;
 }
 
 function startMic(){
 
-    recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-    recognition.lang = "en-US";
-    recognition.continuous = true;
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 5;
+  recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+  recognition.lang = "en-US";
+  recognition.continuous = true;
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 5;
 
-    recognition.start();
-    log("🎤 Listening for 'Drake'...");
+  recognition.start();
 
-    recognition.onresult = async function(event){
+  log("🎤 Listening for 'Drake'...");
 
-        if(processing) return;
+  recognition.onresult = async function(event){
 
-        const textRaw = event.results[event.results.length - 1][0].transcript;
-        const text = textRaw.toLowerCase();
+    if(processing) return;
 
-        log("🗣 Heard: " + text,"user");
+    const textRaw = event.results[event.results.length - 1][0].transcript;
+    const text = textRaw.toLowerCase();
 
-        if(!waitingForCommand){
+    log("🗣 Heard: " + text,"user");
 
-            // ---- WAKE WORD DETECTION ----
-            if(text.includes("drake") || text.includes("draik") || text.includes("drak")){
+    if(text.includes("drake") || text.includes("drak") || text.includes("draik")){
 
-                log("✅ Wake word detected","ai");
+      processing = true;
+      speak("Yes boss?");
 
-                waitingForCommand = true;
+      recognition.stop();
 
-                speak("Yes boss?");
+      setTimeout(()=>{
+        recognition.start();
+      },1000);
 
-                // Stop mic temporarily
-                recognition.stop();
+      return;
+    }
 
-                // After short delay, restart to capture command
-                setTimeout(()=>{
-                    recognition.start();
-                },1000);
-            }
+    // COMMAND MODE
+    if(!processing && text.length > 2){
 
-        } else {
+      processing = true;
 
-            // ---- COMMAND MODE ----
-            waitingForCommand = false;
+      if(text.includes("play")){
+        const song = text.replace("play","").trim();
+        playSong(song);
+      }
+      else{
+        await askAI(text);
+      }
 
-            if(text.includes("play")){
-                const song = text.replace("play","").trim();
-                playSong(song);
-            }
-            else{
-                await askAI(text);
-            }
-        }
-    };
+      processing = false;
+    }
+  };
 
-    recognition.onerror = function(e){
-        log("Mic Error: " + e.error,"error");
-        recognition.stop();
-        setTimeout(()=>recognition.start(),1000);
-    };
+  recognition.onerror = function(e){
+    log("Mic Error: " + e.error,"error");
+    recognition.stop();
+    setTimeout(()=>recognition.start(),1000);
+  };
 }
 
 async function askAI(text){
 
-    log("🤖 Sending to AI...");
+  log("🤖 Sending to A4F API...");
 
-    try{
+  try{
 
-        const res = await fetch("https://openrouter.ai/api/v1/chat/completions",{
-            method:"POST",
-            headers:{
-                "Authorization":"Bearer " + API_KEY,
-                "Content-Type":"application/json"
-            },
-            body:JSON.stringify({
-                model:"liquid/lfm-2.5-1.2b-thinking:free",
-                messages:[
-                    {role:"system",content:"You are Drake AI. Reply short."},
-                    {role:"user",content:text}
-                ]
-            })
-        });
+    const response = await fetch("https://api.a4f.co/v1/chat/completions",{
+      method:"POST",
+      headers:{
+        "Authorization":"Bearer " + API_KEY,
+        "Content-Type":"application/json"
+      },
+      body:JSON.stringify({
+        model:"provider-6/gpt-oss-20b",
+        messages:[
+          {role:"system",content:"You are Drake AI assistant. Reply short and smart."},
+          {role:"user",content:text}
+        ],
+        temperature:0.7,
+        max_tokens:200
+      })
+    });
 
-        const data = await res.json();
+    const data = await response.json();
 
-        if(!data.choices){
-            log("❌ API Error","error");
-            return;
-        }
-
-        const reply = data.choices[0].message.content;
-
-        log("🤖 Drake: " + reply,"ai");
-        speak(reply);
-
-    }catch(err){
-        log("❌ Network Error","error");
+    if(!data.choices){
+      log("❌ API Error: " + JSON.stringify(data),"error");
+      return;
     }
+
+    const reply = data.choices[0].message.content;
+
+    log("🤖 Drake: " + reply,"ai");
+    speak(reply);
+
+  }catch(err){
+    log("❌ Network Error","error");
+  }
 }
 
 function speak(text){
-    const speech = new SpeechSynthesisUtterance(text);
-    speech.lang = "en-US";
-    speech.rate = 1;
-    window.speechSynthesis.speak(speech);
+  const speech = new SpeechSynthesisUtterance(text);
+  speech.lang = "en-US";
+  speech.rate = 1;
+  window.speechSynthesis.speak(speech);
 }
 
 function playSong(song){
-    log("🎵 Playing: " + song);
 
-    const url = "https://www.youtube.com/results?search_query=" +
-        encodeURIComponent(song + " official audio");
+  log("🎵 Playing: " + song);
 
-    window.open(url,"_blank");
+  const url = "https://www.youtube.com/results?search_query=" +
+    encodeURIComponent(song + " official audio");
+
+  window.open(url,"_blank");
 }
 
 window.onload = startMic;
