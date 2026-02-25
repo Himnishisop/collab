@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>🔥 Drake AI Smart Mode</title>
+<title>🔥 Drake AI - Audio Engine</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
@@ -12,118 +12,178 @@ body{
   padding:20px;
 }
 
-#chat{
-  height:60vh;
-  overflow-y:auto;
+#log{
+  height:80vh;
+  overflow:auto;
   border:2px solid #00ffff;
   padding:10px;
+  font-size:14px;
 }
 
-.msg{margin:6px 0;}
+.msg{margin:5px 0;}
 .user{color:#00ff88;}
 .ai{color:#00ccff;}
 .error{color:red;}
-
-#status{
-  margin-top:10px;
-  font-weight:bold;
-}
 </style>
 </head>
 <body>
 
-<h2>🔥 Drake AI — Auto Wake System</h2>
+<h2>🔥 Drake AI — WebAudio Always On</h2>
 
-<div id="chat"></div>
-<div id="status">Status: Idle (Waiting for "Drake")</div>
+<div id="log"></div>
 
 <script>
 
-const API_KEY = "ddc-a4f-c964629239ac4b1eba7b5a8a57e94a38";
+const API_KEY = "YOUR_A4F_API_KEY";
+let audioContext;
+let analyser;
+let microphone;
+let dataArray;
 
-let recognition;
-let mode = "idle"; // idle | command
+let wakeDetected = false;
 let processing = false;
 
 function log(msg,type="info"){
-  const chat = document.getElementById("chat");
   const div = document.createElement("div");
   div.className = "msg " + type;
   div.innerText = msg;
-
-  chat.appendChild(div);
-  chat.scrollTop = chat.scrollHeight;
+  document.getElementById("log").appendChild(div);
+  document.getElementById("log").scrollTop =
+    document.getElementById("log").scrollHeight;
 }
 
-function updateStatus(text){
-  document.getElementById("status").innerText = "Status: " + text;
+/* ===============================
+   START MICROPHONE STREAM
+==================================*/
+
+async function startAudioStream(){
+
+  try{
+
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio:true,
+      video:false
+    });
+
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    microphone = audioContext.createMediaStreamSource(stream);
+    analyser = audioContext.createAnalyser();
+
+    analyser.fftSize = 512;
+
+    const bufferLength = analyser.frequencyBinCount;
+    dataArray = new Uint8Array(bufferLength);
+
+    microphone.connect(analyser);
+
+    log("🎤 Mic Stream Active — Monitoring Audio...");
+
+    monitorAudio();
+
+  }catch(err){
+    log("❌ Mic Access Denied","error");
+  }
 }
 
-function startListening(){
+/* ===============================
+   CONTINUOUS AUDIO MONITOR
+==================================*/
 
-  recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+function monitorAudio(){
+
+  analyser.getByteFrequencyData(dataArray);
+
+  let volume = 0;
+  for(let i=0;i<dataArray.length;i++){
+    volume += dataArray[i];
+  }
+
+  volume = volume / dataArray.length;
+
+  // If sound energy is high → possible speech
+  if(volume > 20){
+    detectWakeWord();
+  }
+
+  requestAnimationFrame(monitorAudio);
+}
+
+/* ===============================
+   WAKE WORD DETECTION
+==================================*/
+
+async function detectWakeWord(){
+
+  if(processing) return;
+
+  // Convert audio to temporary text using Speech API once
+  // (We only use it when sound detected to save power)
+
+  const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
   recognition.lang = "en-US";
-  recognition.continuous = true;
-  recognition.interimResults = false;
+  recognition.maxAlternatives = 3;
 
   recognition.start();
-  updateStatus("Listening for Wake Word...");
 
-  recognition.onresult = async function(event){
+  recognition.onresult = async (event)=>{
 
-    if(processing) return;
-
-    const textRaw = event.results[event.results.length - 1][0].transcript;
-    const text = textRaw.toLowerCase();
+    const text = event.results[0][0].transcript.toLowerCase();
 
     log("🗣 Heard: " + text,"user");
 
-    // ---------- IDLE MODE ----------
-    if(mode === "idle"){
+    if(text.includes("drake") || text.includes("drak") || text.includes("draik")){
 
-      if(text.includes("drake") || text.includes("drak") || text.includes("draik")){
-
-        mode = "command";
-        updateStatus("Wake detected — Listening for Command");
-        speak("Yes boss?");
-      }
-
-    }
-
-    // ---------- COMMAND MODE ----------
-    else if(mode === "command"){
+      log("🔥 Wake Word Triggered","ai");
 
       processing = true;
 
-      recognition.stop(); // stop mic temporarily
-
-      if(text.includes("play")){
-        const song = text.replace("play","").trim();
-        playSong(song);
-      }
-      else{
-        await askAI(text);
-      }
-
-      // After response → go back to idle
-      mode = "idle";
-      updateStatus("Idle (Waiting for 'Drake')");
+      speak("Yes boss?");
 
       setTimeout(()=>{
-        recognition.start();
-      },1500);
-
-      processing = false;
+        listenForCommand();
+      },1000);
     }
 
-  };
-
-  recognition.onerror = function(e){
-    log("Mic Error: " + e.error,"error");
     recognition.stop();
-    setTimeout(()=>recognition.start(),1000);
   };
 }
+
+/* ===============================
+   LISTEN FOR COMMAND AFTER WAKE
+==================================*/
+
+function listenForCommand(){
+
+  const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+  recognition.lang = "en-US";
+  recognition.maxAlternatives = 3;
+
+  recognition.start();
+
+  log("🎯 Listening for Command...");
+
+  recognition.onresult = async (event)=>{
+
+    const command = event.results[0][0].transcript.toLowerCase();
+
+    log("🧠 Command: " + command,"user");
+
+    if(command.includes("play")){
+      const song = command.replace("play","").trim();
+      playSong(song);
+    }
+    else{
+      await askAI(command);
+    }
+
+    processing = false;
+    recognition.stop();
+  };
+}
+
+/* ===============================
+   AI REQUEST
+==================================*/
 
 async function askAI(text){
 
@@ -140,11 +200,11 @@ async function askAI(text){
       body:JSON.stringify({
         model:"provider-6/gpt-oss-20b",
         messages:[
-          {role:"system",content:"You are Drake AI. Reply short and smart."},
+          {role:"system",content:"You are Drake AI. Reply short."},
           {role:"user",content:text}
         ],
-        temperature:0.7,
-        max_tokens:300
+        max_tokens:300,
+        temperature:0.7
       })
     });
 
@@ -165,12 +225,20 @@ async function askAI(text){
   }
 }
 
+/* ===============================
+   TEXT TO SPEECH
+==================================*/
+
 function speak(text){
   const speech = new SpeechSynthesisUtterance(text);
   speech.lang = "en-US";
   speech.rate = 1;
   window.speechSynthesis.speak(speech);
 }
+
+/* ===============================
+   SONG PLAYER
+==================================*/
 
 function playSong(song){
 
@@ -183,10 +251,11 @@ function playSong(song){
   window.open(url,"_blank");
 }
 
-window.onload = startListening;
+/* =============================== */
+
+window.onload = startAudioStream;
 
 </script>
 
 </body>
 </html>
-
