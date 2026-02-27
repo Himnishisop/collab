@@ -1,38 +1,83 @@
-<script>
-const ACCESS_KEY = "8LcymlmIi9K8+h25/5bGVTTC997LahCxBkQ4NwdYxXCa6h…";
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Drake AI</title>
 
-const drakeModel = `
-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
-`;
+  <script src="https://unpkg.com/@picovoice/porcupine-web/dist/iife/index.js"></script>
+  <script src="drake_model.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      background: #0f0f0f;
+      color: white;
+      font-family: Arial;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    button {
+      padding: 15px 30px;
+      background: purple;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-size: 18px;
+      cursor: pointer;
+    }
+    #status {
+      margin-top: 20px;
+      text-align: center;
+      max-width: 400px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>🔥 Drake AI</h1>
+<button onclick="startDrake()">Start Drake</button>
+<div id="status">Idle</div>
+
+<script>
+const PICOVOICE_ACCESS_KEY = "8LcymlmIi9K8+h25/5bGVTTC997LahCxBkQ4NwdYxXCa6h…";
+const A4F_API_KEY = "ddc-a4f-c964629239ac4b1eba7b5a8a57e94a38";
 
 let porcupine;
 let audioContext;
+let processor;
 
-async function startEngine() {
+const statusDiv = document.getElementById("status");
 
-  log("🧠 Loading Porcupine...");
+function speak(text) {
+  const utter = new SpeechSynthesisUtterance(text);
+  speechSynthesis.speak(utter);
+}
+
+async function startDrake() {
+  statusDiv.innerText = "Loading wake word...";
 
   porcupine = await PorcupineWeb.PorcupineWorker.create(
-    ACCESS_KEY,
-    { base64: drakeModel },
+    PICOVOICE_ACCESS_KEY,
+    { base64: DRAKE_MODEL },
     ["drake"],
-    [0.7] // increased sensitivity
+    [0.6]
   );
 
   porcupine.onmessage = (event) => {
     if (event.data.keywordIndex === 0) {
-      log("🔥 WAKE WORD DETECTED", "wake");
+      statusDiv.innerText = "Wake word detected!";
       speak("Yes boss?");
-      listenForCommand();
+      listenCommand();
     }
   };
-
-  log("🎤 Starting microphone...");
 
   audioContext = new AudioContext();
   const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
   const mic = audioContext.createMediaStreamSource(stream);
-  const processor = audioContext.createScriptProcessor(512, 1, 1);
+
+  processor = audioContext.createScriptProcessor(512, 1, 1);
 
   mic.connect(processor);
   processor.connect(audioContext.destination);
@@ -42,6 +87,54 @@ async function startEngine() {
     porcupine.postMessage({ command: "process", input });
   };
 
-  log("✅ Drake Wake Engine Running");
+  statusDiv.innerText = "Listening for wake word...";
+}
+
+function listenCommand() {
+  const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  const recognition = new SpeechRecognition();
+  recognition.lang = "en-US";
+
+  recognition.start();
+
+  recognition.onresult = async (event) => {
+    const command = event.results[0][0].transcript;
+    statusDiv.innerText = "You said: " + command;
+
+    const reply = await callA4F(command);
+    speak(reply);
+
+    statusDiv.innerText = "Listening for wake word...";
+  };
+}
+
+async function callA4F(message) {
+  try {
+    const response = await fetch("https://api.a4f.co/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + A4F_API_KEY
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: "You are Drake, a smart voice assistant." },
+          { role: "user", content: message }
+        ]
+      })
+    });
+
+    const data = await response.json();
+    return data.choices[0].message.content;
+
+  } catch (err) {
+    return "A4F API error occurred.";
+  }
 }
 </script>
+
+</body>
+</html>
