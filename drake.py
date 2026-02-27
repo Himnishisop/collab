@@ -5,7 +5,7 @@ import os
 app = Flask(__name__)
 
 client = OpenAI(
-    api_key=os.environ.get("ddc-a4f-c964629239ac4b1eba7b5a8a57e94a38"),
+    api_key=os.environ.get("A4F_API_KEY"),
     base_url="https://api.a4f.co/v1"
 )
 
