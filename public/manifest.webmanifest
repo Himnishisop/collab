@@ -1,0 +1,27 @@
+{
+  "name": "Echo Voice Camera",
+  "short_name": "Echo Voice",
+  "description": "Record or import video, shape it with studio reverb, echo and volume, trim it, then export a synced MP4.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#04070f",
+  "theme_color": "#04070f",
+  "categories": ["photo", "video", "multimedia"],
+  "icons": [
+    {
+      "src": "https://i.ibb.co/cXkVT3SV/Whats-App-Image-2026-09-06-at-4-06-26-PM.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any"
+    },
+    {
+      "src": "https://i.ibb.co/cXkVT3SV/Whats-App-Image-2026-09-06-at-4-06-26-PM.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any"
+    }
+  ]
+}
