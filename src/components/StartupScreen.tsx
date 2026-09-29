@@ -1,12 +1,7 @@
 import { useState } from "react";
 import { IconWave } from "./Icons";
 
-/**
- * Served from public/icons/ so the app has its mark offline. Until that file is
- * added, both splash screens fall back to the wave mark rather than showing a
- * broken image.
- */
-export const APP_ICON_URL = "/icons/icon-512.png";
+export const APP_ICON_URL = "https://i.ibb.co/cXkVT3SV/Whats-App-Image-2026-09-06-at-4-06-26-PM.jpg";
 
 /**
  * Uses its own `.startup-screen` class rather than `.app-shell`: that shared
