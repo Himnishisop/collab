@@ -1,0 +1,6 @@
+{
+  "name": "Echo Voice Camera",
+  "description": "Echo Voice Camera — record or import a video, shape it with reverb, echo and volume, trim it, then export a synced MP4. Everything runs locally in your browser.",
+  "permissions": [],
+  "capabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
