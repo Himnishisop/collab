@@ -358,6 +358,43 @@ body {
   border-top: 1px solid var(--color-line);
   background: var(--color-ink-900);
 }
+/* import shortcut beside the shutter, so it is reachable one-handed */
+.echo-import-pill,
+.echo-import-spacer {
+  width: 62px;
+  flex: 0 0 auto;
+}
+.echo-import-pill {
+  display: flex;
+  min-height: 62px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  border: 1px solid var(--color-line);
+  border-radius: 18px;
+  background: rgba(7, 13, 26, 0.8);
+  color: var(--color-paper);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition: border-color 140ms ease, color 140ms ease, transform 140ms ease;
+}
+.echo-import-pill:hover {
+  border-color: rgba(87, 230, 255, 0.6);
+  color: var(--color-mint);
+}
+.echo-import-pill:active {
+  transform: scale(0.95);
+}
+.echo-import-pill:disabled {
+  pointer-events: none;
+  opacity: 0.35;
+}
+
 /* camera top-bar actions: scroll instead of squashing on narrow phones */
 .echo-cam-actions {
   min-width: 0;

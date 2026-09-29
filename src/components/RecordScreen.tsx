@@ -212,29 +212,45 @@ export default function RecordScreen({
         </div>
       )}
 
-      {/* bottom — record control only */}
+      {/* bottom — record control, with import within thumb reach */}
       <div className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-3 bg-gradient-to-t from-ink-950/85 via-ink-950/35 to-transparent px-4 pb-[max(1.6rem,env(safe-area-inset-bottom))] pt-14">
-        <button
-          type="button"
-          onClick={onToggleRecord}
-          disabled={!live}
-          aria-pressed={isRecording}
-          aria-label={isRecording ? "Stop recording" : "Start recording"}
-          className={cn(
-            "group relative flex h-[86px] w-[86px] items-center justify-center rounded-full transition-transform duration-150 active:scale-95 disabled:opacity-40",
-            isRecording && "animate-halo rounded-full",
-          )}
-        >
-          <span className="pointer-events-none absolute inset-0 rounded-full border-[3px] border-signal/55 transition-transform duration-200 group-hover:scale-[1.07]" />
-          <span
+        <div className="flex items-center gap-7">
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            disabled={isRecording}
+            aria-label="Import a video from your phone"
+            className="echo-import-pill"
+          >
+            <IconFile width={19} height={19} />
+            <span>Import</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={onToggleRecord}
+            disabled={!live}
+            aria-pressed={isRecording}
+            aria-label={isRecording ? "Stop recording" : "Start recording"}
             className={cn(
-              "transition-all duration-200",
-              isRecording
-                ? "h-9 w-9 rounded-[10px] bg-paper"
-                : "h-[68px] w-[68px] rounded-full bg-signal shadow-[0_0_34px_-4px_rgba(36,245,124,0.85)] group-hover:bg-signal-soft",
+              "group relative flex h-[86px] w-[86px] items-center justify-center rounded-full transition-transform duration-150 active:scale-95 disabled:opacity-40",
+              isRecording && "animate-halo rounded-full",
             )}
-          />
-        </button>
+          >
+            <span className="pointer-events-none absolute inset-0 rounded-full border-[3px] border-signal/55 transition-transform duration-200 group-hover:scale-[1.07]" />
+            <span
+              className={cn(
+                "transition-all duration-200",
+                isRecording
+                  ? "h-9 w-9 rounded-[10px] bg-paper"
+                  : "h-[68px] w-[68px] rounded-full bg-signal shadow-[0_0_34px_-4px_rgba(36,245,124,0.85)] group-hover:bg-signal-soft",
+              )}
+            />
+          </button>
+
+          {/* keeps the record button optically centred */}
+          <span className="echo-import-spacer" aria-hidden="true" />
+        </div>
         <p className="text-center text-[11.5px] font-medium text-dim">
           {isRecording
             ? "Tap again to stop — the editor opens right after"
